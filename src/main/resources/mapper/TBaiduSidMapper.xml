@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="net.gzcx.mapper.TBaiduSidMapper">
+    <resultMap id="BaseResultMap" type="net.gzcx.domain.TBaiduSid">
+        <id column="id" jdbcType="INTEGER" property="id"/>
+        <result column="sid" jdbcType="VARCHAR" property="sid"/>
+        <result column="url" jdbcType="VARCHAR" property="url"/>
+        <result column="create_time" jdbcType="VARCHAR" property="createTime"/>
+        <result column="modified_time" jdbcType="VARCHAR" property="modifiedTime"/>
+    </resultMap>
+    <sql id="Base_Column_List">
+        id
+        , sid, url, create_time, modified_time
+    </sql>
+    <select id="getTBaiduSidBySid" parameterType="java.lang.String"  resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>
+        from t_baidu_sid
+        where sid = #{id,jdbcType=INTEGER}
+    </select>
+    <insert id="save" parameterType="net.gzcx.domain.TQuickNote">
+        insert into t_baidu_sid (id, sid, url,
+                                 create_time, modified_time)
+        values (#{id,jdbcType=INTEGER}, #{sid,jdbcType=VARCHAR}, #{url,jdbcType=VARCHAR},
+                #{createTime,jdbcType=VARCHAR}, #{modifiedTime,jdbcType=VARCHAR})
+    </insert>
+
+    <select id="queryAll"  resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>
+        from t_baidu_sid order by modified_time desc
+    </select>
+</mapper>
