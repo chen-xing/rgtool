@@ -43,6 +43,8 @@ public class FileSupport {
                         .timeout(5000)
                         .execute()
                         .body();
+        log.info("getSignUrl result {}", body);
+
         GetSignUrlResultBean getSignUrlResultBean =
                 JSON.parseObject(body, GetSignUrlResultBean.class);
         return getSignUrlResultBean;
@@ -63,7 +65,7 @@ public class FileSupport {
                             .execute()
                             .body();
 
-            log.info("upload file result is {}",body);
+            log.info("upload file result is {}", body);
 
             BaseResult baseResult = JSON.parseObject(body, BaseResult.class);
 
@@ -92,6 +94,7 @@ public class FileSupport {
                         .timeout(5000)
                         .execute()
                         .body();
+        log.info("getDownloadUrl {} result {}", fileKey, body);
         GetDownloadUrlBean getDownloadUrlBean = JSON.parseObject(body, GetDownloadUrlBean.class);
         if (null != getDownloadUrlBean && getDownloadUrlBean.getErrCode().equals("0")) {
             return getDownloadUrlBean.getUrl();

@@ -50,20 +50,19 @@ public class MainFrame extends JFrame {
         tbs.add(new DecryptContext(), "签署链接处理");
         tbs.add(new UrlToQrCode(), "链接转二维码");
         tbs.add(new SmallTool(), "小工具");
-        tbs.add(new ImageHandler(), "图床工具");
-        tbs.add(new FileSearch(), "文件检索");
         tbs.add(new FileUpload(), "文件上传");
-        tbs.add(new SeoAssistant(), "SEO助手");
-
+//        tbs.add(new ImageHandler(), "图床工具");
+//        tbs.add(new FileSearch(), "文件检索");
+//        tbs.add(new SeoAssistant(), "SEO助手");
         //  tbs.add(new DataTableView(), "DataTableView");
 
         tbs.setToolTipTextAt(0, "dncrypt context");
         tbs.setToolTipTextAt(1, "urltoQrcode");
         tbs.setToolTipTextAt(2, "small tool");
-        tbs.setToolTipTextAt(3, "image tool");
-        tbs.setToolTipTextAt(4, "file search");
-        tbs.setToolTipTextAt(5, "file upload");
-        tbs.setToolTipTextAt(6, "Seo Assistant");
+        tbs.setToolTipTextAt(3, "file upload");
+//        tbs.setToolTipTextAt(3, "image tool");
+//        tbs.setToolTipTextAt(4, "file search");
+//        tbs.setToolTipTextAt(6, "Seo Assistant");
         // tbs.setToolTipTextAt(5, "DataTableView");
         return tbs;
     }

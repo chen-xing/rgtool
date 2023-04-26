@@ -135,7 +135,7 @@ public class FileUpload extends JPanel {
                     if (StringUtils.isNotBlank(downloadUrlByFileKey)) {
                         StringBuffer stringBuffer = new StringBuffer();
                         stringBuffer.append(String.format("%s 对应的下载地址是:", text));
-                        stringBuffer.append(File.separator);
+                        stringBuffer.append(separator);
                         stringBuffer.append(downloadUrlByFileKey);
                         txtResult.setText(stringBuffer.toString());
                     }
