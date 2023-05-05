@@ -12,12 +12,11 @@
 package net.gzcx;
 
 import net.gzcx.esign.DecryptContext;
-import net.gzcx.esign.file.FileUpload;
 import net.gzcx.esign.SmallTool;
 import net.gzcx.esign.UrlToQrCode;
-import net.gzcx.fileSearch.FileSearch;
-import net.gzcx.seo.SeoAssistant;
-import net.gzcx.tool.image.ImageHandler;
+import net.gzcx.esign.file.FileUpload;
+import net.gzcx.net.NetAssistant;
+import net.gzcx.tool.Calculator;
 import net.gzcx.utils.ComponentUtil;
 
 import javax.swing.*;
@@ -51,18 +50,24 @@ public class MainFrame extends JFrame {
         tbs.add(new UrlToQrCode(), "链接转二维码");
         tbs.add(new SmallTool(), "小工具");
         tbs.add(new FileUpload(), "文件上传");
-//        tbs.add(new ImageHandler(), "图床工具");
-//        tbs.add(new FileSearch(), "文件检索");
-//        tbs.add(new SeoAssistant(), "SEO助手");
+        tbs.add(new NetAssistant(), "网络信息");
+        tbs.add(new Calculator(), "计算器");
+
+
+        //        tbs.add(new ImageHandler(), "图床工具");
+        //        tbs.add(new FileSearch(), "文件检索");
+        //        tbs.add(new SeoAssistant(), "SEO助手");
         //  tbs.add(new DataTableView(), "DataTableView");
 
         tbs.setToolTipTextAt(0, "dncrypt context");
         tbs.setToolTipTextAt(1, "urltoQrcode");
         tbs.setToolTipTextAt(2, "small tool");
         tbs.setToolTipTextAt(3, "file upload");
-//        tbs.setToolTipTextAt(3, "image tool");
-//        tbs.setToolTipTextAt(4, "file search");
-//        tbs.setToolTipTextAt(6, "Seo Assistant");
+        tbs.setToolTipTextAt(4, "net ip info");
+        tbs.setToolTipTextAt(5, "practical computer");
+        //        tbs.setToolTipTextAt(3, "image tool");
+        //        tbs.setToolTipTextAt(4, "file search");
+        //        tbs.setToolTipTextAt(6, "Seo Assistant");
         // tbs.setToolTipTextAt(5, "DataTableView");
         return tbs;
     }
