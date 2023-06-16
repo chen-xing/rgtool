@@ -11,6 +11,13 @@ import net.gzcx.mapper.TBaiduSidMapper;
 import net.gzcx.seo.webmagic.ChinazUrlBean;
 import net.gzcx.utils.JarToolUtil;
 import net.gzcx.utils.MybatisUtil;
+import org.openqa.selenium.By;
+import org.openqa.selenium.Keys;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.chrome.ChromeOptions;
+import org.openqa.selenium.interactions.Actions;
 import us.codecraft.webmagic.Site;
 import us.codecraft.webmagic.model.OOSpider;
 
@@ -20,6 +27,7 @@ import java.io.UnsupportedEncodingException;
 import java.text.MessageFormat;
 import java.util.List;
 import java.util.Optional;
+import java.util.Random;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
@@ -42,6 +50,14 @@ public class SeoAssistant extends JPanel {
     private JButton btnGetBaiduSid = new JButton("获取百度SID"); // 开始执行
 
     private JTextArea txtResult = new JTextArea(); // 输出执行的结果
+
+    private JCheckBox jCheckBox = new JCheckBox("无图模式");
+
+    private JLabel jLabelSleep = new JLabel("停顿事件(s)");
+    private JLabel jLabelExecuteTime = new JLabel("浏览的页面数");
+    private JComboBox sleepTimeCom = new JComboBox();
+    private JComboBox executeTime = new JComboBox();
+    private JButton btnsimulate = new JButton("模拟访问"); // 开始执行
 
     /**
      * @author chen xing
@@ -76,12 +92,36 @@ public class SeoAssistant extends JPanel {
         // init btn pane
         JPanel btnPane = new JPanel(new FlowLayout(FlowLayout.RIGHT));
 
+        JPanel seleniumPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        seleniumPanel.setBorder(BorderFactory.createTitledBorder("模拟访问"));
+
+        seleniumPanel.add(jCheckBox);
+        seleniumPanel.add(jLabelSleep);
+
+        sleepTimeCom.addItem("1");
+        sleepTimeCom.addItem("5");
+        sleepTimeCom.addItem("10");
+        seleniumPanel.add(sleepTimeCom);
+        seleniumPanel.add(jLabelExecuteTime, BorderLayout.WEST);
+
+        executeTime.addItem("10");
+        executeTime.addItem("30");
+        executeTime.addItem("50");
+        executeTime.addItem("100");
+        seleniumPanel.add(executeTime);
+
+        btnsimulate.setUI(new BEButtonUI().setNormalColor(BEButtonUI.NormalColor.green));
+        btnsimulate.setForeground(Color.white);
+        seleniumPanel.add(btnsimulate);
+
+        btnPane.add(seleniumPanel);
+
         JPanel leftBtnPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
         leftBtnPanel.setBorder(BorderFactory.createTitledBorder("引擎"));
         leftBtnPanel.add(ckBaidu);
         //        leftBtnPanel.add(ckGoogle);
 
-        btnPane.add(leftBtnPanel);
+        btnPane.add(leftBtnPanel, BorderLayout.CENTER);
 
         JPanel rightBtnPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
         rightBtnPanel.setBorder(BorderFactory.createTitledBorder("执行"));
@@ -95,7 +135,7 @@ public class SeoAssistant extends JPanel {
         rightBtnPanel.add(runCountcmb);
         rightBtnPanel.add(btnRun);
         rightBtnPanel.add(btnGetBaiduSid);
-        btnPane.add(rightBtnPanel);
+        btnPane.add(rightBtnPanel, BorderLayout.EAST);
 
         // init main ui
         this.add(btnPane, BorderLayout.NORTH);
@@ -136,6 +176,18 @@ public class SeoAssistant extends JPanel {
                             .run();
                     btnGetBaiduSid.setEnabled(true);
                 });
+
+        btnsimulate.addActionListener(
+                e -> {
+                    try {
+                        startEdge(
+                                Integer.parseInt(sleepTimeCom.getSelectedItem().toString()),
+                                Integer.parseInt(executeTime.getSelectedItem().toString()),
+                                jCheckBox.isSelected());
+                    } catch (InterruptedException ex) {
+                        log.warn("执行模拟访问异常", ex);
+                    }
+                });
     }
 
     // region 私有方法
@@ -154,7 +206,7 @@ public class SeoAssistant extends JPanel {
 
         final String targetUrl =
                 "https://www.baidu.com/link?url=dKTs8TpNPIBxHA0FzBvFYWcMmRaO0U1JVth3YfAEmT3duPGgfX5TB-wNCTRG8tWz&wd=&eqid=ad168783000bcb1e000000045d3a5a9f";
-        final String referUrl = "https://www.94rg.com";
+        final String referUrl = "https://www.gzcx.net";
 
         String baseDir = JarToolUtil.getJarDir();
         String filePath = baseDir + "/baiduID.csv";
@@ -202,6 +254,71 @@ public class SeoAssistant extends JPanel {
         baiduSeo.run();
     }
     // endregion 结束
+
+    /**
+     * @author chen xing
+     * @description 执行浏览器的模拟访问
+     * @param sleepTime 停顿的时间
+     * @param executeTime 执行的次数
+     * @param graphlessMode 开启无图模式操作
+     * @return void
+     * @date 2023-06-16 13:38
+     */
+    private void startEdge(Integer sleepTime, Integer executeTime, boolean graphlessMode)
+            throws InterruptedException {
+        ChromeOptions options = new ChromeOptions(); // 创建浏览器参数
+        // 设置从ChromeDriver中获取属性（处理反爬机制）
+        // 设置谷歌浏览器用户数据目录
+
+        // 执行无图浏览器的操作
+        if (graphlessMode) {
+            options.addArguments("--headless");
+        }
+        options.addArguments("--disable-gpu");
+        options.addArguments("start-maximized");
+        options.addArguments("enable-automation");
+        options.addArguments("--no-sandbox");
+        options.addArguments("--disable-infobars");
+        options.addArguments("--disable-dev-shm-usage");
+        options.addArguments("--disable-browser-side-navigation");
+
+        // 设置 Chrome driver 的路径
+        System.setProperty("webdriver.chrome.driver", "E:\\chenxing\\tools\\chromedriver.exe");
+
+        // 初始化 Chrome driver
+        WebDriver driver = new ChromeDriver(options);
+
+        String url = getStartPage();
+        // 打开网页
+        driver.get(url);
+
+        for (int m = 0; m < executeTime; m++) {
+            TimeUnit.SECONDS.sleep(sleepTime);
+            WebElement webElement = driver.findElement(By.cssSelector("body"));
+            webElement.click(); // 有的时候必须点击一下，下拉才能生效（有的网站是这样，原因未找到）
+
+            for (int i = 0; i < 5; i++) {
+                webElement.sendKeys(Keys.PAGE_DOWN);
+                TimeUnit.SECONDS.sleep(3);
+            }
+
+            WebElement element =
+                    driver.findElement(By.className("line-container")).findElement(By.tagName("a"));
+            Actions actions = new Actions(driver);
+            actions.moveToElement(element).click().perform();
+        }
+
+        // 关闭浏览器
+        driver.quit();
+    }
+
+    private String getStartPage() {
+        int i = new Random().nextInt(18);
+        if (i == 0) {
+            i = 1;
+        }
+        return String.format("https://www.gzcx.net/article/%d", i);
+    }
 
     public static void main(String[] args) {
         new SeoAssistant().runJob();

@@ -21,11 +21,11 @@ import java.util.Random;
 @Data
 @Slf4j
 public class BaiduSeo {
-    private String Referer = "https://www.94rg.com";
+    private String Referer = "https://www.gzcx.net";
     private String BaiduID = "";
     private String Hjs = "http://hm.baidu.com/h.js?";
     private String Hgif = "http://hm.baidu.com/hm.gif?";
-    private String TargetPage = "https://www.94rg.com";
+    private String TargetPage = "https://www.gzcx.net";
     private String UserAgent =
             "Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; Trident/5.0)"; // IE9
     private String MyData =

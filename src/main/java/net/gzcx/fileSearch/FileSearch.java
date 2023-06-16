@@ -5,7 +5,10 @@ import cn.hutool.cron.CronUtil;
 import cn.hutool.cron.task.Task;
 import com.google.common.collect.Lists;
 import com.timevale.mandarin.base.util.StringUtils;
+import javafx.event.EventDispatchChain;
 import lombok.extern.slf4j.Slf4j;
+import net.gzcx.domain.file.GetSignUrlResultBean;
+import net.gzcx.esign.file.FileSupport;
 import net.gzcx.utils.SystemConfig;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.index.IndexWriter;
@@ -21,11 +24,10 @@ import org.apache.lucene.util.Version;
 import org.jb2011.lnf.beautyeye.ch3_button.BEButtonUI;
 
 import javax.swing.*;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.KeyEvent;
+import java.awt.event.*;
 import java.io.File;
 import java.io.IOException;
 import java.text.MessageFormat;
@@ -38,16 +40,22 @@ import java.text.MessageFormat;
 @Slf4j
 public class FileSearch extends JPanel {
     private JButton indexButton = new JButton("创建索引");
-    private JButton searchButton = new JButton("检索");
+    private JButton clearIndexButton = new JButton("清除索引");
+
+    private JLabel indexPath = new JLabel();
+
+    private JButton searchButton = new JButton(" 检索 ");
     private JTextField keywordTextField = new JTextField();
-    // private JScrollPane jScrollPane = null;
+    private JScrollPane jScrollPane = null;
     private JTable resultTable = new JTable();
+
+    private JCheckBox jCheckBox = new JCheckBox("定时索引");
 
     public FileSearch() {
         super(new BorderLayout());
         initGUI();
         initListeners();
-        // initCreateIndexTask();
+        initCreateIndexTask();
     }
 
     /**
@@ -58,36 +66,55 @@ public class FileSearch extends JPanel {
      * @date 2021-10-29 11:10
      */
     private void initGUI() {
-        indexButton.setUI(new BEButtonUI().setNormalColor(BEButtonUI.NormalColor.blue));
+        indexButton.setUI(new BEButtonUI().setNormalColor(BEButtonUI.NormalColor.green));
         indexButton.setForeground(Color.white);
+        clearIndexButton.setUI(new BEButtonUI().setNormalColor(BEButtonUI.NormalColor.red));
+        clearIndexButton.setForeground(Color.white);
 
-        searchButton.setUI(new BEButtonUI().setNormalColor(BEButtonUI.NormalColor.red));
-        searchButton.setForeground(Color.white);
+        JPanel indexJpanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        indexJpanel.setBorder(BorderFactory.createTitledBorder("索引管理"));
+
+        String indexDir = SystemConfig.getLuceneSearchDir();
+        indexPath.setText(String.format("当前索引位置:%s ", indexDir));
+        indexJpanel.add(jCheckBox);
+        indexJpanel.add(indexPath);
+        indexJpanel.add(indexButton);
+        indexJpanel.add(clearIndexButton);
+
+        JPanel queryJpanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        queryJpanel.setBorder(BorderFactory.createTitledBorder("内容检索"));
 
         keywordTextField.setEditable(true);
-        keywordTextField.setPreferredSize(new Dimension(800, 30));
+        keywordTextField.setPreferredSize(new Dimension(400, 30));
 
-        resultTable.setRowHeight(30); // 行高
-        resultTable.setFont(new Font("黑体", Font.PLAIN, 12)); // 字体、颜色、大小
+        searchButton.setUI(new BEButtonUI().setNormalColor(BEButtonUI.NormalColor.lightBlue));
+        searchButton.setForeground(Color.white);
+
+        queryJpanel.add(keywordTextField);
+        queryJpanel.add(searchButton);
+
+        resultTable.setRowHeight(40); // 行高
+        resultTable.setFont(new Font("黑体", Font.PLAIN, 14)); // 字体、颜色、大小
         resultTable.setShowHorizontalLines(false); // 显示行的分割线
         resultTable.setShowVerticalLines(false); // 显示列的分割线
-        resultTable.setIntercellSpacing(new Dimension(0, 1)); // 单元格的间隔
+        resultTable.setIntercellSpacing(new Dimension(1, 1)); // 单元格的间隔
         resultTable.setGridColor(new Color(220, 220, 220)); // 分割线的颜色
         resultTable.setColumnSelectionAllowed(false); // 是否允许选中一整列
         resultTable.setRowSelectionAllowed(true); // 是否允许选中一整行
 
         Component table;
-        // jScrollPane = new JScrollPane(resultTable);
+        jScrollPane = new JScrollPane(resultTable);
+
+        tableBindMouseClickEvent(resultTable);
 
         // init btn pane
-        JPanel btnPane = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        btnPane.add(indexButton);
-        btnPane.add(keywordTextField);
-        btnPane.add(searchButton);
+        JPanel btnPane = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        btnPane.add(indexJpanel, BorderLayout.WEST);
+        btnPane.add(queryJpanel, BorderLayout.EAST);
 
         // init main ui
         this.add(btnPane, BorderLayout.NORTH);
-        this.add(resultTable, BorderLayout.CENTER);
+        this.add(jScrollPane, BorderLayout.CENTER);
         this.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
     }
 
@@ -104,6 +131,11 @@ public class FileSearch extends JPanel {
                     searchResult();
                 });
 
+        /** 清理缓存 */
+        clearIndexButton.addActionListener(
+                e -> {
+                    clearIndex();
+                });
         searchButton.registerKeyboardAction(
                 new ActionListener() {
                     @Override
@@ -117,7 +149,7 @@ public class FileSearch extends JPanel {
         indexButton.addActionListener(
                 x -> {
                     try {
-                        creatIndex();
+                        creatIndex(true);
                     } catch (IOException | ParseException e) {
                         JOptionPane.showMessageDialog(this, "创建索引失败！");
                         log.error("create index error", e);
@@ -205,9 +237,12 @@ public class FileSearch extends JPanel {
                 new Task() {
                     @Override
                     public void execute() {
+                        if (!jCheckBox.isSelected()) {
+                            return;
+                        }
                         try {
                             log.info("start execute createIndex");
-                            creatIndex();
+                            creatIndex(false);
                             log.info("end execute createIndex");
                         } catch (IOException | ParseException e) {
                             log.error("create index error", e);
@@ -228,7 +263,17 @@ public class FileSearch extends JPanel {
      * @return void
      * @date 2021-10-29 16:59
      */
-    private void creatIndex() throws IOException, ParseException {
+    private void creatIndex(boolean needChooseDir) throws IOException, ParseException {
+        String searchDir = SystemConfig.getLuceneSearchDir();
+        if (needChooseDir) {
+            String indexChangedDirPath = getIndexChangedDirPath();
+            if (StringUtils.isNotBlank(indexChangedDirPath)) {
+                searchDir = indexChangedDirPath;
+                SystemConfig.setSearchDir(indexChangedDirPath);
+                indexPath.setText(indexChangedDirPath);
+            }
+        }
+
         IndexWriter indexWriter =
                 new IndexWriter(
                         LuceneUtils.getDirectory(),
@@ -237,7 +282,6 @@ public class FileSearch extends JPanel {
         Document doc = null; // 我们索引的有可能是一段文本or数据库中的一张表
         Articles articles = null;
 
-        String searchDir = SystemConfig.getLuceneSearchDir();
         String[] dirArr = searchDir.split(";");
 
         for (String dir : dirArr) {
@@ -344,5 +388,69 @@ public class FileSearch extends JPanel {
                 log.error("检索关键字为：{}", keyWords, e);
             }
         }
+    }
+
+    /**
+     * 获取选择后的文件夹的路径
+     *
+     * @return
+     */
+    private String getIndexChangedDirPath() {
+        JFileChooser chooser = new JFileChooser();
+        chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+        int returnVal = chooser.showOpenDialog(this);
+        if (returnVal == JFileChooser.APPROVE_OPTION) {
+            File selectedFile = chooser.getSelectedFile();
+            String absolutePath = selectedFile.getAbsolutePath();
+            return absolutePath;
+        }
+        return null;
+    }
+
+    /** 表格绑定鼠标双击事件 */
+    private void tableBindMouseClickEvent(JTable table) {
+        MouseListener mouseListener =
+                new MouseAdapter() {
+                    public void mousePressed(MouseEvent e) {
+                        if (e.getButton() == MouseEvent.BUTTON1 && e.getClickCount() == 2) {
+                            // 获取选中的行和列
+                            int row = table.rowAtPoint(e.getPoint());
+                            int col = table.columnAtPoint(e.getPoint());
+
+                            // 获取选中的单元格的内容
+                            if (row >= 0 && col >= 0) {
+                                Object cellValue = table.getValueAt(row, col);
+                                String filePath = cellValue.toString();
+                                if (!FileUtil.exist(filePath)) {
+                                    return;
+                                }
+                                // 选中文件所在的目录并且高亮显示文件
+                                try {
+                                    Runtime.getRuntime()
+                                            .exec("explorer.exe /e, /select, " + filePath);
+                                } catch (IOException ex) {
+                                    log.error("open file error", ex);
+                                }
+                            }
+                        }
+                    }
+                };
+        // 添加单击事件监听器
+        table.addMouseListener(mouseListener);
+    }
+
+    /** 清理缓存 */
+    private void clearIndex() {
+        String indexDir = SystemConfig.getIndexDir();
+        if (StringUtils.isBlank(indexDir)) {
+            return;
+        }
+        FileUtil.loopFiles(indexDir).stream()
+                .forEach(
+                        x -> {
+                            if (x.exists()) {
+                                x.delete();
+                            }
+                        });
     }
 }

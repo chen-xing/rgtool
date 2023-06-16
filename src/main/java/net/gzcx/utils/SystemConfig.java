@@ -52,4 +52,13 @@ public class SystemConfig {
     public static String getCreateIndexCron() {
         return setting.getStr("createIndexCron");
     }
+
+    /**
+     * 更新索引的位置
+     * @param newPath
+     */
+    public static void setSearchDir(String newPath) {
+         setting.set("searchDir",newPath);
+         setting.store();
+    }
 }
