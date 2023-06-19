@@ -101,6 +101,8 @@ public class SeoAssistant extends JPanel {
         sleepTimeCom.addItem("1");
         sleepTimeCom.addItem("5");
         sleepTimeCom.addItem("10");
+        sleepTimeCom.addItem("60");
+        sleepTimeCom.addItem("180");
         seleniumPanel.add(sleepTimeCom);
         seleniumPanel.add(jLabelExecuteTime, BorderLayout.WEST);
 
@@ -179,14 +181,20 @@ public class SeoAssistant extends JPanel {
 
         btnsimulate.addActionListener(
                 e -> {
-                    try {
-                        startEdge(
-                                Integer.parseInt(sleepTimeCom.getSelectedItem().toString()),
-                                Integer.parseInt(executeTime.getSelectedItem().toString()),
-                                jCheckBox.isSelected());
-                    } catch (InterruptedException ex) {
-                        log.warn("执行模拟访问异常", ex);
-                    }
+                    new SwingWorker<Void, Void>() {
+                        @Override
+                        protected Void doInBackground() throws Exception {
+                            try {
+                                startEdge(
+                                        Integer.parseInt(sleepTimeCom.getSelectedItem().toString()),
+                                        Integer.parseInt(executeTime.getSelectedItem().toString()),
+                                        jCheckBox.isSelected());
+                            } catch (InterruptedException ex) {
+                                log.warn("执行模拟访问异常", ex);
+                            }
+                            return null;
+                        }
+                    }.execute();
                 });
     }
 
